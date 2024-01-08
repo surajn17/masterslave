@@ -21,6 +21,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
       - name: SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
         with:
@@ -39,7 +41,12 @@ jobs:
         with:
           token: ${{ secrets.TOKEN }}
 
-      # Manually create a pull request from the main branch
-      - name: Create pull request
-        run: |
-          env GH_TOKEN="${{ secrets.TOKEN }}" gh pr create --base main --head ${{ github.sha }} --title "[Automated] Merge ${{ github.ref_name }} into main" --body "Automated Pull Request" --reviewer triniha
+
+      # https://github.com/marketplace/actions/enable-pull-request-automerge
+      - name: Enable automerge
+        if: steps.open-pr.outputs.pr_number != ''
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:         
+          token: ${{ secrets.TOKEN }}
+          pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
+          merge-method: merge
