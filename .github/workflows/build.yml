@@ -42,4 +42,4 @@ jobs:
       # Manually create a pull request from the main branch
       - name: Create pull request
         run: |
-          gh pr create --base main --head ${{ github.sha }} --title "[Automated] Merge ${{ github.ref_name }} into main" --body "Automated Pull Request" --reviewer triniha
+          env GH_TOKEN="${{ secrets.TOKEN }}" gh pr create --base main --head ${{ github.sha }} --title "[Automated] Merge ${{ github.ref_name }} into main" --body "Automated Pull Request" --reviewer triniha
