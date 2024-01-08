@@ -39,47 +39,7 @@ jobs:
         with:
           token: ${{ secrets.TOKEN }}
 
-      # Create pull request
+      # Manually create a pull request from the main branch
       - name: Create pull request
-        id: open-pr
-        uses: repo-sync/pull-request@v2
-        with:
-          github_token: ${{ secrets.TOKEN }}
-          destination_branch: ${{ github.event.repository.default_branch }}
-          pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
-          pr_body: "Automated Pull Request"
-
-      # Automatically assign reviewer and assignees using github-script
-      - name: Assign Reviewer and Assignees
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.TOKEN }}
-          script: |
-            const { data: pullRequest } = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-            });
-
-            await github.pulls.requestReviewers({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              reviewers: ["triniha"],  // Add your desired reviewer here
-            });
-
-            await github.issues.addAssignees({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              assignees: ["triniha"],  // Add your desired assignee here
-            });
-
-      # Enable automerge
-      - name: Enable automerge
-        if: steps.open-pr.outputs.pr_number != ''
-        uses: peter-evans/enable-pull-request-automerge@v2
-        with:
-          token: ${{ secrets.TOKEN }}
-          pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
-          merge-method: merge
+        run: |
+          gh pr create --base main --head ${{ github.sha }} --title "[Automated] Merge ${{ github.ref_name }} into main" --body "Automated Pull Request" --reviewer triniha
