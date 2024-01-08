@@ -41,7 +41,7 @@ jobs:
 
       # Set GH_TOKEN environment variable
       - name: Set GH_TOKEN
-        run: echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+        run: echo "GH_TOKEN=${{ secrets.TOKEN }}" >> $GITHUB_ENV
 
       # Create pull request
       - name: Create pull request
