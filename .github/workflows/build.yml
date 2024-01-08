@@ -1,26 +1,74 @@
-name: Build
+name: Build and Merge
 
 on:
-  push:
+  pull_request:
     branches:
       - main
-
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: sonarsource/sonarqube-scan-action@master
+          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
-      # - uses: sonarsource/sonarqube-quality-gate-action@master
-      #   timeout-minutes: 5
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        with:
+          timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  main:
+    name: Create PR Release to Main
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ needs.build.result == 'success' }}
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+
+      # Create pull request
+      - name: Create pull request
+        id: open-pr
+        run: |
+          gh pr create --base main --head ${{ github.sha }} --title "Automated PR" --body "Automated Pull Request"
+      env:
+        GH_TOKEN: ${{ secrets.TOKEN }}
+
+      # Automatically assign reviewer and assignee using github-script
+      - name: Assign Reviewer and Assignee
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          script: |
+            const { data: pullRequest } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            await github.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ["surajn17"],  // Add your desired reviewer here
+            });
+
+            await github.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              assignees: ["surajn17"],  // Add your desired assignee here
+            });
