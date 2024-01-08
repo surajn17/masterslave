@@ -65,14 +65,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number,
-              reviewers: ["surajn17"],  // Add your desired reviewer here
+              reviewers: ["triniha"],  // Add your desired reviewer here
             });
 
             await github.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.pull_request.number,
-              assignees: ["surajn17"],  // Add your desired assignee here
+              assignees: ["triniha"],  // Add your desired assignee here
             });
 
       # Enable automerge
