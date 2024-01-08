@@ -21,8 +21,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # If you wish to fail your job when the Quality Gate is red, uncomment the
-      # following lines. This would typically be used to fail a deployment.
       - name: SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
         with:
@@ -41,8 +39,41 @@ jobs:
         with:
           token: ${{ secrets.TOKEN }}
 
+      # Create pull request
+      - name: Create pull request
+        id: open-pr
+        run: |
+          gh pr create --base main --head ${{ github.sha }} --title "Automated PR" --body "Automated Pull Request"
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
 
-      # https://github.com/marketplace/actions/enable-pull-request-automerge
+      # Automatically assign reviewer and assignees using github-script
+      - name: Assign Reviewer and Assignees
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          script: |
+            const { data: pullRequest } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            await github.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ["triniha"],  // Add your desired reviewer here
+            });
+
+            await github.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              assignees: ["triniha"],  // Add your desired assignee here
+            });
+
+      # Enable automerge
       - name: Enable automerge
         if: steps.open-pr.outputs.pr_number != ''
         uses: peter-evans/enable-pull-request-automerge@v2
